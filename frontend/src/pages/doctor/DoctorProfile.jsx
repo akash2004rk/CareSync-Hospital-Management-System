@@ -43,7 +43,7 @@ function DoctorProfile() {
   if (loading) return <div className="loader-wrapper"><div className="spinner" /></div>;
 
   return (
-    <div className="page-container" style={{ animation: 'fadeIn 0.3s ease' }}>
+    <div className="page-container" >
       <div className="page-header">
         <div>
           <h1 className="page-title">My Profile</h1>

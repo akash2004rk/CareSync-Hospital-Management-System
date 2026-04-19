@@ -1,29 +1,21 @@
 import { useEffect, useState } from 'react';
 import api from '../../api/axios.js';
 import toast from 'react-hot-toast';
-import { LuStethoscope, LuUsers, LuCalendarDays, LuCircleDollarSign } from 'react-icons/lu';
+import { LuCalendarDays } from 'react-icons/lu';
 
-function AdminDashboard() {
-  const [stats, setStats] = useState(null);
+function ManageAppointments() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const [statsRes, apptRes] = await Promise.all([
-          api.get('/analytics/admin'),
-          api.get('/appointments'),
-        ]);
-        setStats(statsRes.data.stats);
-        const appts = Array.isArray(apptRes.data) ? apptRes.data : (apptRes.data.appointments || []);
-        setAppointments(appts.slice(0, 8));
-      } catch {
-        toast.error('Failed to load dashboard data');
-      } finally { setLoading(false); }
-    };
-    load();
+    api.get('/appointments')
+      .then(res => setAppointments(Array.isArray(res.data) ? res.data : (res.data.appointments || [])))
+      .catch(() => toast.error('Failed to load appointments'))
+      .finally(() => setLoading(false));
   }, []);
+
+  const filtered = appointments.filter(a => filter === 'all' || a.status === filter);
 
   const statusBadge = (s) => {
     const map = { pending:'badge-warning', confirmed:'badge-info', completed:'badge-success', cancelled:'badge-danger' };
@@ -33,43 +25,34 @@ function AdminDashboard() {
   if (loading) return <div className="loader-wrapper"><div className="spinner" /></div>;
 
   return (
-    <div className="page-container" >
+    <div className="page-container">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Admin Dashboard</h1>
-          <p className="page-subtitle">Hospital overview and operations</p>
+          <h1 className="page-title">Manage Appointments</h1>
+          <p className="page-subtitle">Overview of all system bookings — {appointments.length} total</p>
         </div>
-        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-          {new Date().toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}
+        <div className="form-group" style={{ marginBottom: 0 }}>
+          <select
+            className="form-input"
+            value={filter}
+            onChange={e => setFilter(e.target.value)}
+            style={{ minWidth: 160 }}
+          >
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="stats-grid" style={{ marginBottom: 24 }}>
-        {[
-          { label: 'Total Doctors',   value: stats?.totalDoctors       ?? '—', icon: <LuStethoscope size={22}/>,      color: 'blue'   },
-          { label: 'Total Patients',  value: stats?.totalPatients      ?? '—', icon: <LuUsers size={22}/>,            color: 'green'  },
-          { label: "Today's Appts",   value: stats?.todayAppointments  ?? '—', icon: <LuCalendarDays size={22}/>,     color: 'yellow' },
-          { label: 'Revenue (₹)',     value: stats?.revenue            ?? '—', icon: <LuCircleDollarSign size={22}/>, color: 'purple' },
-        ].map(s => (
-          <div key={s.label} className="stat-card">
-            <div className={`stat-icon ${s.color}`}>{s.icon}</div>
-            <div className="stat-info">
-              <div className="stat-value">{s.value}</div>
-              <div className="stat-label">{s.label}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Recent Appointments */}
       <div className="card">
-        <h2 className="section-title">Recent Appointments</h2>
-        {appointments.length === 0 ? (
+        {filtered.length === 0 ? (
           <div className="empty-state">
             <LuCalendarDays size={48} style={{ opacity: 0.3, marginBottom: 12 }} />
-            <h3>No appointments yet</h3>
-            <p>Appointments will appear here once booked</p>
+            <h3>No appointments found</h3>
+            <p>Try changing the filter or wait for new bookings</p>
           </div>
         ) : (
           <>
@@ -81,20 +64,28 @@ function AdminDashboard() {
                     <th>Patient</th>
                     <th>Doctor</th>
                     <th>Date</th>
-                    <th>Time</th>
+                    <th>Time Slot</th>
                     <th>Status</th>
                     <th>Reason</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {appointments.map(a => (
+                  {filtered.map(a => (
                     <tr key={a._id}>
-                      <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{a.patientId?.name || 'N/A'}</td>
-                      <td>{a.doctorId?.name || 'N/A'}</td>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{a.patientId?.name || 'N/A'}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{a.patientId?.email}</div>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 500 }}>{a.doctorId?.name || 'N/A'}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{a.doctorId?.specialization}</div>
+                      </td>
                       <td>{a.date}</td>
                       <td>{a.timeSlot}</td>
                       <td>{statusBadge(a.status)}</td>
-                      <td style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.reason}</td>
+                      <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {a.reason}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -103,7 +94,7 @@ function AdminDashboard() {
 
             {/* Mobile Card View */}
             <div className="mobile-card-list show-mobile-only">
-              {appointments.map(a => (
+              {filtered.map(a => (
                 <div key={a._id} className="mobile-card">
                   <div className="mobile-card-header">
                     <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{a.patientId?.name || 'N/A'}</div>
@@ -116,7 +107,7 @@ function AdminDashboard() {
                     </div>
                     <div className="mobile-card-item">
                       <span className="mobile-card-label">Schedule</span>
-                      <span className="mobile-card-value">{a.date} at {a.timeSlot}</span>
+                      <span className="mobile-card-value">{a.date} · {a.timeSlot}</span>
                     </div>
                   </div>
                   <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
@@ -133,4 +124,4 @@ function AdminDashboard() {
   );
 }
 
-export default AdminDashboard;
+export default ManageAppointments;

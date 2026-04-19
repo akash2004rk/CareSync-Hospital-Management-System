@@ -4,6 +4,7 @@ import {
   getAppointments,
   updateAppointmentStatus,
   uploadPrescription,
+  generatePrescriptionPDF,
 } from '../controllers/appointmentController.js';
 import { protect, doctor } from '../middleware/authMiddleware.js';
 import upload from '../utils/multerConfig.js';
@@ -20,5 +21,6 @@ router.post(
   upload.single('prescription'),
   uploadPrescription
 );
+router.get('/:id/generate-prescription', protect, generatePrescriptionPDF);
 
 export default router;

@@ -12,16 +12,20 @@ import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import ManageDoctors from './pages/admin/ManageDoctors.jsx';
 import ManagePatients from './pages/admin/ManagePatients.jsx';
 import AdminAnalytics from './pages/admin/AdminAnalytics.jsx';
+import ManageAppointments from './pages/admin/ManageAppointments.jsx';
+import HospitalInventory from './pages/admin/HospitalInventory.jsx';
 
 // Doctor
 import DoctorDashboard from './pages/doctor/DoctorDashboard.jsx';
 import DoctorProfile from './pages/doctor/DoctorProfile.jsx';
 import DoctorSlots from './pages/doctor/DoctorSlots.jsx';
+import MyPatients from './pages/doctor/MyPatients.jsx';
 
 // Patient
 import PatientDashboard from './pages/patient/PatientDashboard.jsx';
 import BookAppointment from './pages/patient/BookAppointment.jsx';
 import PatientRecords from './pages/patient/PatientRecords.jsx';
+import AppointmentHistory from './pages/patient/AppointmentHistory.jsx';
 
 import PrivateRoute from './components/PrivateRoute.jsx';
 
@@ -53,6 +57,8 @@ function App() {
         <Route index element={<AdminDashboard />} />
         <Route path="doctors" element={<ManageDoctors />} />
         <Route path="patients" element={<ManagePatients />} />
+        <Route path="appointments" element={<ManageAppointments />} />
+        <Route path="inventory" element={<HospitalInventory />} />
         <Route path="analytics" element={<AdminAnalytics />} />
       </Route>
 
@@ -61,12 +67,14 @@ function App() {
         <Route index element={<DoctorDashboard />} />
         <Route path="profile" element={<DoctorProfile />} />
         <Route path="slots" element={<DoctorSlots />} />
+        <Route path="patients" element={<MyPatients />} />
       </Route>
 
       {/* Patient */}
       <Route path="/patient" element={<PrivateRoute role="patient" />}>
         <Route index element={<PatientDashboard />} />
         <Route path="book" element={<BookAppointment />} />
+        <Route path="history" element={<AppointmentHistory />} />
         <Route path="records" element={<PatientRecords />} />
       </Route>
 

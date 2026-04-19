@@ -25,7 +25,7 @@ function DoctorSlots() {
           );
           setSlots(sorted);
         }
-        setAppointments(apptsRes.data);
+        setAppointments(Array.isArray(apptsRes.data) ? apptsRes.data : (apptsRes.data.appointments || []));
       } catch {
         toast.error('Failed to load slots/appointments');
       } finally { setLoading(false); }
@@ -124,7 +124,7 @@ function DoctorSlots() {
   if (loading) return <div className="loader-wrapper"><div className="spinner" /></div>;
 
   return (
-    <div className="page-container" style={{ animation: 'fadeIn 0.3s ease' }}>
+    <div className="page-container" >
       <div className="page-header">
         <div>
           <h1 className="page-title">My Availability Slots</h1>

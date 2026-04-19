@@ -3,9 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginUser, clearError } from '../store/authSlice.js';
 import toast from 'react-hot-toast';
+import { LuEye as Eye, LuEyeOff as EyeOff, LuMail as Mail, LuLock as Lock } from 'react-icons/lu';
+import { motion } from 'framer-motion';
 
 function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
+  const [showPwd, setShowPwd] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user, loading, error } = useSelector((s) => s.auth);
@@ -64,13 +67,16 @@ function LoginPage() {
         </div>
       </div>
 
-      {/* Login form */}
+      {/* Login form container */}
       <div style={{
-        width: 480, display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        padding: 40,
+        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 'clamp(16px, 5vw, 40px)', width: '100%',
+        minHeight: '100vh',
       }}>
-        <div style={{ width: '100%', maxWidth: 400 }}>
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}
+          style={{ width: '100%', maxWidth: 400 }}
+        >
           <div style={{ marginBottom: 32, textAlign: 'center' }}>
             <div style={{ fontSize: 40, marginBottom: 8 }}>👋</div>
             <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 6 }}>Sign in</h1>
@@ -88,28 +94,48 @@ function LoginPage() {
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             <div className="form-group">
               <label className="form-label" htmlFor="login-email">Email Address</label>
-              <input
-                id="login-email"
-                type="email"
-                className="form-input"
-                placeholder="doctor@hospital.com"
-                value={form.email}
-                onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                required
-              />
+              <div style={{ position: 'relative' }}>
+                <Mail size={16} style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }} />
+                <input
+                  id="login-email"
+                  type="email"
+                  className="form-input"
+                  style={{ paddingLeft: 38 }}
+                  placeholder="name@example.com"
+                  value={form.email}
+                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                  required
+                />
+              </div>
             </div>
 
             <div className="form-group">
               <label className="form-label" htmlFor="login-password">Password</label>
-              <input
-                id="login-password"
-                type="password"
-                className="form-input"
-                placeholder="••••••••"
-                value={form.password}
-                onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                required
-              />
+              <div style={{ position: 'relative' }}>
+                <Lock size={16} style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }} />
+                <input
+                  id="login-password"
+                  type={showPwd ? 'text' : 'password'}
+                  className="form-input"
+                  style={{ paddingLeft: 38, paddingRight: 40 }}
+                  placeholder="••••••••"
+                  value={form.password}
+                  onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                  required
+                />
+                <button
+                  type="button"
+                  tabIndex="-1"
+                  onClick={() => setShowPwd(!showPwd)}
+                  style={{
+                    position: 'absolute', right: 8, top: 8,
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    color: 'var(--text-muted)', padding: 4
+                  }}
+                >
+                  {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
 
             <button
@@ -138,7 +164,7 @@ function LoginPage() {
           }}>
             ← Back to homepage
           </Link>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

@@ -22,7 +22,7 @@ function ManagePatients() {
   if (loading) return <div className="loader-wrapper"><div className="spinner" /></div>;
 
   return (
-    <div className="page-container" style={{ animation: 'fadeIn 0.3s ease' }}>
+    <div className="page-container" >
       <div className="page-header">
         <div>
           <h1 className="page-title">Manage Patients</h1>
@@ -49,42 +49,80 @@ function ManagePatients() {
             <p>{search ? 'Try a different search term' : 'Patients will appear here after registration'}</p>
           </div>
         ) : (
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Patient</th>
-                  <th>Phone</th>
-                  <th>Total Appointments</th>
-                  <th>Last Visit</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(p => (
-                  <tr key={p._id}>
-                    <td>
-                      <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                        <div className="avatar" style={{ background:'linear-gradient(135deg,#f59e0b,#ef4444)' }}>
-                          {p.name?.charAt(0) || '?'}
-                        </div>
-                        <div>
-                          <div style={{ fontWeight:600, color:'var(--text-primary)' }}>{p.name}</div>
-                          <div style={{ fontSize:12, color:'var(--text-muted)' }}>{p.email}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>{p.phone || <span style={{ color:'var(--text-muted)' }}>—</span>}</td>
-                    <td>
-                      <span className="badge badge-info">{p.totalAppts}</span>
-                    </td>
-                    <td>
-                      {p.lastVisit !== 'N/A' ? new Date(p.lastVisit).toLocaleDateString('en-IN') : <span style={{ color:'var(--text-muted)' }}>Never</span>}
-                    </td>
+          <>
+            {/* Desktop Table View */}
+            <div className="table-wrapper hide-mobile">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Patient</th>
+                    <th>Phone</th>
+                    <th>Total Appointments</th>
+                    <th>Last Visit</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filtered.map(p => (
+                    <tr key={p._id}>
+                      <td>
+                        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                          <div className="avatar" style={{ background:'linear-gradient(135deg,#f59e0b,#ef4444)' }}>
+                            {p.name?.charAt(0) || '?'}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight:600, color:'var(--text-primary)' }}>{p.name}</div>
+                            <div style={{ fontSize:12, color:'var(--text-muted)' }}>{p.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>{p.phone || <span style={{ color:'var(--text-muted)' }}>—</span>}</td>
+                      <td>
+                        <span className="badge badge-info">{p.totalAppts}</span>
+                      </td>
+                      <td>
+                        {p.lastVisit !== 'N/A' ? new Date(p.lastVisit).toLocaleDateString('en-IN') : <span style={{ color:'var(--text-muted)' }}>Never</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="mobile-card-list show-mobile-only">
+              {filtered.map(p => (
+                <div key={p._id} className="mobile-card">
+                  <div className="mobile-card-header">
+                    <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                      <div className="avatar" style={{ background:'linear-gradient(135deg,#f59e0b,#ef4444)', width:32, height:32 }}>
+                        {p.name?.charAt(0) || '?'}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight:600, color:'var(--text-primary)', fontSize:14 }}>{p.name}</div>
+                        <div style={{ fontSize:11, color:'var(--text-muted)' }}>{p.email}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mobile-card-body">
+                    <div className="mobile-card-item">
+                      <span className="mobile-card-label">Phone</span>
+                      <span className="mobile-card-value">{p.phone || '—'}</span>
+                    </div>
+                    <div className="mobile-card-item">
+                      <span className="mobile-card-label">Total Appts</span>
+                      <span className="mobile-card-value">{p.totalAppts}</span>
+                    </div>
+                    <div className="mobile-card-item">
+                      <span className="mobile-card-label">Last Visit</span>
+                      <span className="mobile-card-value">
+                        {p.lastVisit !== 'N/A' ? new Date(p.lastVisit).toLocaleDateString('en-IN') : 'Never'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

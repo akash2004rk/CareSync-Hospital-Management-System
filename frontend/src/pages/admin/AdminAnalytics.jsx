@@ -37,7 +37,7 @@ function AdminAnalytics() {
   ];
 
   return (
-    <div className="page-container" style={{ animation: 'fadeIn 0.3s ease' }}>
+    <div className="page-container" >
       <div className="page-header">
         <div>
           <h1 className="page-title">Analytics</h1>

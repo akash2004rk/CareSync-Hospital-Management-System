@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import api from '../../api/axios.js';
 import toast from 'react-hot-toast';
+import { LuCalendarDays, LuClock, LuCircleCheck, LuCircleX, LuStethoscope } from 'react-icons/lu';
 
 function PatientDashboard() {
   const { user } = useSelector(s => s.auth);
@@ -11,7 +12,7 @@ function PatientDashboard() {
 
   useEffect(() => {
     api.get('/appointments')
-      .then(r => setAppointments(r.data))
+      .then(r => setAppointments(Array.isArray(r.data) ? r.data : (r.data.appointments || [])))
       .catch(() => toast.error('Failed to load appointments'))
       .finally(() => setLoading(false));
   }, []);
@@ -36,7 +37,7 @@ function PatientDashboard() {
   if (loading) return <div className="loader-wrapper"><div className="spinner" /></div>;
 
   return (
-    <div className="page-container" style={{ animation: 'fadeIn 0.3s ease' }}>
+    <div className="page-container" >
       <div className="page-header">
         <div>
           <h1 className="page-title">Hello, {user?.name?.split(' ')[0]} 👋</h1>
@@ -47,10 +48,10 @@ function PatientDashboard() {
 
       <div className="stats-grid" style={{ marginBottom: 24 }}>
         {[
-          { label: 'Total Appointments', value: appointments.length,  icon: '📅', color: 'blue'   },
-          { label: 'Upcoming',           value: upcoming.length,      icon: '🕐', color: 'yellow' },
-          { label: 'Completed',          value: past.filter(a => a.status === 'completed').length, icon: '✅', color: 'green' },
-          { label: 'Cancelled',          value: past.filter(a => a.status === 'cancelled').length, icon: '❌', color: 'red'   },
+          { label: 'Total Appointments', value: appointments.length, icon: <LuCalendarDays size={22}/>, color: 'blue' },
+          { label: 'Upcoming',           value: upcoming.length,     icon: <LuClock size={22}/>,       color: 'yellow'},
+          { label: 'Completed',          value: past.filter(a => a.status==='completed').length, icon: <LuCircleCheck size={22}/>, color: 'green' },
+          { label: 'Cancelled',          value: past.filter(a => a.status==='cancelled').length, icon: <LuCircleX size={22}/>,   color: 'red'   },
         ].map(s => (
           <div key={s.label} className="stat-card">
             <div className={`stat-icon ${s.color}`}>{s.icon}</div>
@@ -67,7 +68,7 @@ function PatientDashboard() {
         <h2 className="section-title">Upcoming Appointments</h2>
         {upcoming.length === 0 ? (
           <div className="empty-state" style={{ padding: '32px 20px' }}>
-            <div className="empty-state-icon">📅</div>
+            <LuCalendarDays size={48} style={{ opacity: 0.3, marginBottom: 12 }} />
             <h3>No upcoming appointments</h3>
             <p style={{ marginBottom:12 }}>Book your first appointment with our verified doctors</p>
             <Link to="/patient/book" className="btn btn-primary btn-sm">Book Now</Link>
@@ -80,15 +81,29 @@ function PatientDashboard() {
                 background:'var(--bg-secondary)', padding:'14px 16px',
                 borderRadius:'var(--radius-sm)', border:'1px solid var(--border-light)',
               }}>
-                <div style={{ fontSize:32 }}>👨‍⚕️</div>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontWeight:600, color:'var(--text-primary)' }}>{a.doctorId?.name || 'Doctor'}</div>
-                  <div style={{ fontSize:13, color:'var(--text-muted)' }}>{a.date} at {a.timeSlot} · {a.reason}</div>
+                <div style={{
+                  width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+                  background: 'linear-gradient(135deg,#10b981,#06b6d4)',
+                  display:'flex', alignItems:'center', justifyContent:'center', color:'white'
+                }}>
+                  <LuStethoscope size={20}/>
                 </div>
-                {statusBadge(a.status)}
-                {a.status !== 'cancelled' && (
-                  <button className="btn btn-danger btn-sm" onClick={() => handleCancel(a._id)}>Cancel</button>
-                )}
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontWeight:600, color:'var(--text-primary)', fontSize: 15 }}>{a.doctorId?.name || 'Doctor'}</div>
+                  <div style={{ fontSize:13, color:'var(--text-muted)', marginTop: 2 }}>{a.date} at {a.timeSlot} · {a.reason}</div>
+                </div>
+                <div style={{ display:'flex', alignItems:'center', gap:10, width:'100%', justifyContent:'space-between', marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border-light)' }} className="show-mobile-only">
+                  {statusBadge(a.status)}
+                  {a.status !== 'cancelled' && (
+                    <button className="btn btn-danger btn-sm" onClick={() => handleCancel(a._id)}>Cancel</button>
+                  )}
+                </div>
+                <div className="hide-mobile" style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  {statusBadge(a.status)}
+                  {a.status !== 'cancelled' && (
+                    <button className="btn btn-danger btn-sm" onClick={() => handleCancel(a._id)}>Cancel</button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -99,7 +114,9 @@ function PatientDashboard() {
       {past.length > 0 && (
         <div className="card">
           <h2 className="section-title">Past Appointments</h2>
-          <div className="table-wrapper">
+          
+          {/* Desktop View */}
+          <div className="table-wrapper hide-mobile">
             <table>
               <thead>
                 <tr><th>Doctor</th><th>Date</th><th>Time</th><th>Reason</th><th>Status</th></tr>
@@ -116,6 +133,28 @@ function PatientDashboard() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile View */}
+          <div className="mobile-card-list show-mobile-only">
+            {past.map(a => (
+              <div key={a._id} className="mobile-card">
+                <div className="mobile-card-header">
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{a.doctorId?.name || 'N/A'}</div>
+                  {statusBadge(a.status)}
+                </div>
+                <div className="mobile-card-body">
+                  <div className="mobile-card-item">
+                    <span className="mobile-card-label">Schedule</span>
+                    <span className="mobile-card-value">{a.date} · {a.timeSlot}</span>
+                  </div>
+                  <div className="mobile-card-item">
+                    <span className="mobile-card-label">Reason</span>
+                    <span className="mobile-card-value" style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{a.reason}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

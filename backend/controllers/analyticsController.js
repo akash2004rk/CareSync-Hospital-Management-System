@@ -6,57 +6,73 @@ import DoctorProfile from '../models/DoctorProfile.js';
 // @route   GET /api/analytics/admin
 // @access  Private (Admin)
 const getAdminAnalytics = async (req, res) => {
-  const totalPatients = await User.countDocuments({ role: 'patient' });
-  const totalDoctors = await User.countDocuments({ role: 'doctor' });
-  
-  const today = new Date().toISOString().split('T')[0];
-  const todayAppointments = await Appointment.countDocuments({ date: today });
-  
-  const completedAppointments = await Appointment.find({ status: 'completed' });
-  
-  // Dynamic Real Revenue Calculation
-  const docProfiles = await DoctorProfile.find({});
-  const feeMap = {};
-  docProfiles.forEach(doc => feeMap[doc.userId.toString()] = doc.consultationFee);
-  
-  let revenue = 0;
-  completedAppointments.forEach(appt => {
-    revenue += (feeMap[appt.doctorId.toString()] || 500);
-  });
+  try {
+    const totalPatients = await User.countDocuments({ role: 'patient' });
+    const totalDoctors = await User.countDocuments({ role: 'doctor' });
+    const range = req.query.range || '7d';
+    
+    // Default to today
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todayAppointments = await Appointment.countDocuments({ date: todayStr });
+    
+    const completedAppointments = await Appointment.find({ status: 'completed' });
+    
+    // Dynamic Real Revenue Calculation
+    const docProfiles = await DoctorProfile.find({});
+    const feeMap = {};
+    docProfiles.forEach(doc => feeMap[doc.userId.toString()] = doc.consultationFee);
+    
+    let revenue = 0;
+    completedAppointments.forEach(appt => {
+      revenue += (feeMap[appt.doctorId.toString()] || 500);
+    });
 
-  // 7-day appointment chart data
-  const last7Days = [...Array(7)].map((_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    return d.toISOString().split('T')[0];
-  }).reverse();
+    // Chart data based on range
+    let dataPoints = 7;
+    let step = 1; // 1 day
+    if (range === '30d') { dataPoints = 30; }
+    else if (range === '12m') { dataPoints = 12; step = 30; } // Approx months
 
-  const chartData = await Promise.all(last7Days.map(async (date) => {
-    const count = await Appointment.countDocuments({ date });
-    return { date, appointments: count };
-  }));
+    const chartLabels = [...Array(dataPoints)].map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (i * step));
+      if (range === '12m') {
+        return d.toISOString().substring(0, 7); // YYYY-MM
+      }
+      return d.toISOString().split('T')[0];
+    }).reverse();
 
-  // Status distribution
-  const pending = await Appointment.countDocuments({ status: 'pending' });
-  const confirmed = await Appointment.countDocuments({ status: 'confirmed' });
-  const cancelled = await Appointment.countDocuments({ status: 'cancelled' });
-  const completed = completedAppointments.length;
+    const chartData = await Promise.all(chartLabels.map(async (label) => {
+      // If month, search by regex
+      const query = range === '12m' ? { date: { $regex: `^${label}` } } : { date: label };
+      const count = await Appointment.countDocuments(query);
+      return { date: label, appointments: count };
+    }));
 
-  res.json({
-    stats: {
-      totalPatients,
-      totalDoctors,
-      todayAppointments,
-      revenue,
-    },
-    chartData,
-    statusDistribution: [
-      { name: 'Pending', value: pending },
-      { name: 'Confirmed', value: confirmed },
-      { name: 'Cancelled', value: cancelled },
-      { name: 'Completed', value: completed },
-    ],
-  });
+    // Status distribution
+    const pending = await Appointment.countDocuments({ status: 'pending' });
+    const confirmed = await Appointment.countDocuments({ status: 'confirmed' });
+    const cancelled = await Appointment.countDocuments({ status: 'cancelled' });
+    const completed = completedAppointments.length;
+
+    res.json({
+      stats: {
+        totalPatients,
+        totalDoctors,
+        todayAppointments,
+        revenue,
+      },
+      chartData,
+      statusDistribution: [
+        { name: 'Pending', value: pending },
+        { name: 'Confirmed', value: confirmed },
+        { name: 'Cancelled', value: cancelled },
+        { name: 'Completed', value: completed },
+      ],
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Analytics fetch failed' });
+  }
 };
 
 // @desc    Get doctor analytics

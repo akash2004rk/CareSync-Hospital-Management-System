@@ -6,7 +6,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { Server } from 'socket.io';
 import http from 'http';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import connectDB from './utils/db.js';
+import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
 // Route Imports
 import authRoutes from './routes/authRoutes.js';
@@ -16,6 +19,7 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import medicalRecordRoutes from './routes/medicalRecordRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
 
 dotenv.config();
 
@@ -36,10 +40,36 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Middlewares
+app.use(helmet());
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Rate Limiting — skipped in development to avoid blocking local requests.
+// In production: general limit protects all routes; auth limit prevents brute force.
+const isDev = process.env.NODE_ENV !== 'production';
+
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => isDev,
+  message: { message: 'Too many requests, please try again in 15 minutes.' },
+});
+app.use('/api', generalLimiter);
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => isDev,
+  message: { message: 'Too many login attempts, please try again in 15 minutes.' },
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
 
 // Static folder for uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -52,6 +82,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/medical-records', medicalRecordRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Socket.io connection logic
 io.on('connection', (socket) => {
@@ -71,12 +102,7 @@ io.on('connection', (socket) => {
 app.set('socketio', io);
 
 // Error Handling
-app.use((err, req, res, next) => {
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-  res.status(statusCode).json({
-    message: err.message,
-    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
-  });
-});
+app.use(notFound);
+app.use(errorHandler);
 
 server.listen(port, () => console.log(`Server started on port ${port}`));

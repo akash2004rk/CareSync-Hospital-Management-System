@@ -1,11 +1,11 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import api from '../../api/axios.js';
 import toast from 'react-hot-toast';
+import { LuFileText, LuImage, LuTrash2, LuEye, LuFolderOpen } from 'react-icons/lu';
 
 function PatientRecords() {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
-  const fileRef = useRef();
 
   const load = () => {
     api.get('/medical-records')
@@ -15,7 +15,6 @@ function PatientRecords() {
   };
 
   useEffect(() => { load(); }, []);
-
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this record?')) return;
@@ -29,7 +28,7 @@ function PatientRecords() {
   if (loading) return <div className="loader-wrapper"><div className="spinner" /></div>;
 
   return (
-    <div className="page-container" style={{ animation: 'fadeIn 0.3s ease' }}>
+    <div className="page-container" >
       <div className="page-header">
         <div>
           <h1 className="page-title">Medical Records</h1>
@@ -40,9 +39,9 @@ function PatientRecords() {
       {records.length === 0 ? (
         <div className="card">
           <div className="empty-state">
-            <div className="empty-state-icon">📋</div>
+            <LuFolderOpen size={48} style={{ opacity: 0.3, marginBottom: 12 }} />
             <h3>No medical records</h3>
-            <p>Upload prescriptions, lab reports, or scan files to keep them safe</p>
+            <p>Your doctor will upload prescriptions and lab reports here after consultations</p>
           </div>
         </div>
       ) : (
@@ -52,9 +51,9 @@ function PatientRecords() {
               <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                 <div style={{
                   width:44, height:44, borderRadius:8, background:'var(--accent-light)',
-                  display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0,
+                  display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, color: 'var(--accent)'
                 }}>
-                  {r.fileUrl?.endsWith('.pdf') ? '📄' : '🖼️'}
+                  {r.fileUrl?.endsWith('.pdf') ? <LuFileText size={22}/> : <LuImage size={22}/>}
                 </div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontWeight:600, color:'var(--text-primary)', fontSize:14, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
@@ -68,7 +67,7 @@ function PatientRecords() {
 
               <div style={{ display:'flex', gap:6 }}>
                 <span className={`badge ${r.uploadedBy === 'doctor' ? 'badge-info' : 'badge-purple'}`} style={{ fontSize:11 }}>
-                  {r.uploadedBy === 'doctor' ? '👨‍⚕️ Doctor' : '👤 Self'}
+                  {r.uploadedBy === 'doctor' ? 'Doctor Upload' : 'Self Upload'}
                 </span>
                 <span className="badge badge-success" style={{ fontSize:11 }}>{r.recordType}</span>
               </div>
@@ -81,13 +80,13 @@ function PatientRecords() {
                   className="btn btn-ghost btn-sm"
                   style={{ flex:1, justifyContent:'center' }}
                 >
-                  👁️ View
+                  <LuEye size={14}/> View
                 </a>
                 <button
                   className="btn btn-danger btn-sm"
                   onClick={() => handleDelete(r._id)}
                 >
-                  🗑️
+                  <LuTrash2 size={14}/>
                 </button>
               </div>
             </div>
